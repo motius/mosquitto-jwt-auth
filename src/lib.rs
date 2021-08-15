@@ -5,9 +5,10 @@ extern crate serde_derive;
 
 use crate::mosquitto_sys::{AclType, ClientID};
 use crate::topic_utils::TopicPath;
-use jsonwebtoken::{Algorithm, Validation};
+use jsonwebtoken::{Algorithm, Validation, DecodingKey};
 use std::collections::HashMap;
 use std::env;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
@@ -29,7 +30,6 @@ impl MosquittoJWTAuthPluginConfig {
 
         let secret = if let Some(secret_file_opt) = opts.get("jwt_sec_file") {
             let mut file_contents = Vec::new();
-
             File::open(secret_file_opt)
                 .map_err(|_| "couldn't open secret file")?
                 .read_to_end(&mut file_contents)
@@ -177,7 +177,7 @@ impl MosquittoJWTAuthPluginInstance {
 
         let claims = jsonwebtoken::decode::<Claims>(
             password.unwrap(),
-            config.secret.as_ref(),
+            &DecodingKey::from_rsa_pem(config.secret.as_ref()).unwrap(),
             &config.validation,
         );
 
